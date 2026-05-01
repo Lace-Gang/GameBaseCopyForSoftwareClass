@@ -6,7 +6,7 @@ using UnityEngine.InputSystem.HID;
 
 namespace GameBase
 {
-    public class MainCamera : MonoBehaviour
+    public class MainCamera : MonoBehaviour, ISubscriber
     {
         #region Variables
 
@@ -16,6 +16,8 @@ namespace GameBase
         private float m_mouseY = 0f;        //Mouse Y position
         private float m_yaw = 0f;           //Tracks accumulative Camera Yaw (Rotation about the Y-axis)
         private float m_pitch = 0f;         //Tracks accumulative Camera Pitch (Rotaion about the X-axis)
+
+        private bool m_gamePaused = false;
 
         //Exposed Variables
         [Header("Universal Main Camera Settings")]
@@ -43,6 +45,11 @@ namespace GameBase
         #endregion Variables
 
 
+        private void Awake()
+        {
+            ConcretePublisher.Instance.RegisterSubscriber(this);
+        }
+
         /// <summary>
         /// Sets up critical starting information
         /// </summary>
@@ -59,7 +66,7 @@ namespace GameBase
         void Update()
         {
             //Check for paused game
-            if(GameInstance.Instance.getPaused()) return;
+            if(m_gamePaused) return;
 
             //convert mouse axis to rotation
             m_mouseX = Input.GetAxis("Mouse X") * m_mouseSensitivity;
@@ -147,6 +154,26 @@ namespace GameBase
 
                     break;
 
+                default:
+                    break;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            ConcretePublisher.Instance.UnregisterSubscriber(this);
+        }
+
+        public void UpdateState(string newState)
+        {
+            switch (newState)
+            {
+                case "Game Paused":
+                    m_gamePaused = true;
+                    break;
+                case "Game Unpaused":
+                    m_gamePaused = false;
+                    break;
                 default:
                     break;
             }

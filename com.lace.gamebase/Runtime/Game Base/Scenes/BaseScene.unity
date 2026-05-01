@@ -173,10 +173,7 @@ MonoBehaviour:
   m_playerPrefab: {fileID: 7065663312760934044, guid: 078785446fa9a5445b4424219df11f8b, type: 3}
   m_gameSceneName: SampleScene
   m_restartMode: 1
-  m_gameHasPauseMenu: 1
-  m_pauseMenuToggleKey: 120
   m_inventoryPausesGame: 1
-  m_toggleInventoryKey: 98
   m_deathTransitionTimer: 4
   m_respawnType: 0
   m_respawnHealthPercentage: 100
@@ -185,7 +182,6 @@ MonoBehaviour:
   - {fileID: 1783197353}
   m_SpawnableSound: {fileID: 7429713441446592030, guid: 46cabef3c06aa0941a4b6678ed0e8ee8, type: 3}
   m_saveFromPauseMenu: 1
-  m_loadFromMainMenu: 1
   m_saveScore: 1
   m_playsMusic: 1
   m_musicPlayer: {fileID: 13246022}
@@ -1303,6 +1299,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game Base Runtime Assembly Definition::GameBase.LoadMainMainuUpdater
   m_playsMusic: 0
   m_mainMenuScreenMusic: {fileID: 0}
+  m_loadFromMainMenu: 1
 --- !u!1 &392875815
 GameObject:
   m_ObjectHideFlags: 0
@@ -7111,6 +7108,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1588219192}
   m_CullTransparentMesh: 1
+--- !u!1 &1620697935
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1620697937}
+  - component: {fileID: 1620697936}
+  m_Layer: 0
+  m_Name: Publisher
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1620697936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1620697935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dad29e8077123b47a36af862981937b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game Base Runtime Assembly Definition::GameBase.ConcretePublisher
+--- !u!4 &1620697937
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1620697935}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.05429, y: 4.43952, z: -2.80226}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1644044928
 GameObject:
   m_ObjectHideFlags: 0
@@ -9457,6 +9498,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 490e014f17f398b42a32e8bda3a4a80d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game Base Runtime Assembly Definition::GameBase.PlayGameUpdater
+  m_gameHasPauseMenu: 1
+  m_pauseMenuToggleKey: 120
+  m_inventoryPausesGame: 1
+  m_toggleInventoryKey: 98
   m_saveHotKeyEnabled: 0
   m_saveHotKey: 106
   m_loadHotKeyEnabled: 0
@@ -9800,3 +9845,4 @@ SceneRoots:
   - {fileID: 472162403}
   - {fileID: 1742144908}
   - {fileID: 1501307876610956085}
+  - {fileID: 1620697937}

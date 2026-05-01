@@ -7,18 +7,16 @@ using UnityEngine.SceneManagement;
 
 namespace GameBase
 {
-    public class GameInstance : MonoBehaviour, IDataPersistence
+    public class GameInstance : MonoBehaviour, IDataPersistence, ISubscriber
     {
         #region Hidden variables
 
         ////Hidden Variables
         
         //Used for tracking various states and other important info
-        private bool m_paused = false;                          //Is the game paused
         private bool m_pauseMenuOpen = false;                   //Is the pause menu open
         private bool m_usesInventory = false;                   //Is the inventory system being used in this game
         private bool m_inventoryOpen = false;                   //Is the inventory open
-        private bool m_playerAlive = true;                      //Is the player alive
         private bool m_validSaveFile = false;
         private bool m_loadOnPlay = false;                      //Should save file load when game loads
         private bool m_restartingGame = false;                  //Has player indicated from pause menu to restart since the last update
@@ -143,8 +141,6 @@ namespace GameBase
 
 
         #region Getters and Setters
-        public bool getPaused() {  return m_paused; }   //Allows other scripts to know if the game is currently paused
-        public bool getPlayerAlive() {  return m_playerAlive; }   //Allows other scripts to know if the player is alive
         public PlayerCharacter GetPlayerScript() { return m_playerScript; }  //Allows other scripts to access the current player character script
 
         /// <summary>
@@ -172,8 +168,6 @@ namespace GameBase
 
         public bool GetIsValidSaveFile() { return m_validSaveFile; }
 
-        public bool GetRestartingGame() { return m_restartingGame; }
-
         public GameObject GetPlayerCharacter() { return m_playerCharacter; }
 
         public GameObject GetPlayerPrefab() { return m_playerPrefab; }
@@ -195,10 +189,6 @@ namespace GameBase
         public void SetPlayerScript(PlayerCharacter playerScript) { m_playerScript = playerScript; }
 
         public void SetPlayerCharacter(GameObject playerCharacter) { m_playerCharacter = playerCharacter; }
-
-        public void SetRestartingGame(bool restartingGame) { m_restartingGame = restartingGame; }
-
-        public void SetPlayerAlive(bool isAlive) { m_playerAlive = isAlive; }
 
         public void SetScore(float score) { m_score = score; }
 
@@ -224,6 +214,7 @@ namespace GameBase
             Instance = this;
 
             m_stateContext = new GameStateContext(m_loadTitleUpdater);
+            ConcretePublisher.Instance.RegisterSubscriber(this);
         }
 
         /// <summary>
@@ -482,7 +473,7 @@ namespace GameBase
         {
             //Pause Game
             Time.timeScale = 0;
-            m_paused = true;
+            ConcretePublisher.Instance.Publish("Game Paused");
 
             //Lower Music Volume
             if(m_playsMusic && m_musicPlayer != null)
@@ -502,7 +493,8 @@ namespace GameBase
         {
             //Unpause game
             Time.timeScale = 1;
-            m_paused = false;
+            ConcretePublisher.Instance.Publish("Game Unpaused");
+
 
             //Raise Music Volume
             if (m_playsMusic && m_musicPlayer != null)
@@ -587,13 +579,12 @@ namespace GameBase
         /// Transitions to next stage of game (afer player death)
         /// </summary>
         /// <returns>Yield return for Coroutine</returns>
-        public IEnumerator OnPLayerDeath()
+        public IEnumerator OnPlayerDeath()
         {
-            m_playerAlive = false;  //Indicate player is no longer alive
             yield return new WaitForSeconds(m_deathTransitionTimer); //Wait so that death animation can finish
-
+        
             //Account for player lives
-
+        
             if(m_playerScript.GetLives() > 1)
             {
                 //Respawns player
@@ -617,9 +608,9 @@ namespace GameBase
                 case RespawnType.RESPAWNINPLACE:
                     //Respawns player character in the same location as where they died
                     m_playerScript.OnRespawn(m_respawnInvincibilityTimer);
-                    m_playerAlive = true;
+                    ConcretePublisher.Instance.Publish("Player Alive");
                     break;
-
+        
                 case RespawnType.LOADLASTSAVE:
                     //Respawns player by loading the save file. This will, however, still decrease the number of lives the player has.
                     yield return StartCoroutine(UserInterface.Instance.FadeOut());
@@ -627,10 +618,10 @@ namespace GameBase
                     m_gameState = GameState.LOADSAVE;
                     m_playerScript.OnRespawn(m_respawnInvincibilityTimer);
                     break;
-
+        
                 case RespawnType.RESPAWNATSAVELOCATION:
                     //Respawns player character at location of last loaded save, without loading any other data from that save.
-
+        
                     //Find player spawn point, and relocate player character to that point.
                     PlayerSpawnPoint spawnPoint = FindFirstObjectByType<PlayerSpawnPoint>();
                     if (spawnPoint != null)
@@ -638,21 +629,21 @@ namespace GameBase
                         spawnPoint.LoadData(DataPersistenceManager.Instance.GetData());
                         m_playerScript.SetPlayerTransform(spawnPoint.transform.position, spawnPoint.transform.rotation);
                         m_playerScript.OnRespawn(m_respawnInvincibilityTimer);
-                        m_playerAlive = true;
+                        ConcretePublisher.Instance.Publish("Player Alive");
                     }
                     else
                     {
                         //Notify user if there is no player spawn point at which to spawn the player
                         Debug.LogError("No PlayerSpawnPoint was located in the scene when respawning! Player cannot respawn!");
                     }
-
+        
                     break;
-
+        
                 case RespawnType.RESPAWNATSTATICLOCATION:
                     //Respawns player at a static location
                     bool spawnPointFound = false;
                     StaticSpawnPoint[] spawns = FindObjectsByType<StaticSpawnPoint>(FindObjectsSortMode.None); //find all static spawn points in the loaded scene
-
+        
                     //search for the first static spawn point configured for the player
                     foreach (StaticSpawnPoint spawn in spawns)
                     {
@@ -662,21 +653,21 @@ namespace GameBase
                             spawnPointFound = true;
                             m_playerScript.SetPlayerTransform(spawn.transform.position, spawn.transform.rotation);
                             m_playerScript.OnRespawn(m_respawnInvincibilityTimer);
-                            m_playerAlive = true;
+                            ConcretePublisher.Instance.Publish("Player Alive");
 
                             break;
                         }
                     }
-
+        
                     //Notify user if static spawn point configued for player has not been found
                     if (!spawnPointFound) Debug.LogError("No StaticSpawnPoint was located in the scene with tag 'Player'! Player cannot respawn!");
-
+        
                     break;
-
+        
                 default:
                     break;
             }
-
+        
             m_playerScript.AddOrReduceLives(-1);    //Reduce player lives by one (executed here so that the "load last save" respawn type will still evaluate number of lives left correctly
         }
 
@@ -771,8 +762,8 @@ namespace GameBase
             //that the coroutine executes all code the next time it is started
             m_saveHasAlreadyLoaded = false;
             m_FadeInCompleted = false;
-            
-            m_playerAlive = true;   //Set player to alive
+
+            ConcretePublisher.Instance.Publish("Player Alive");   
             m_gameState = GameState.PLAYGAME;   //Transition to "Play Game" game state
         }
 
@@ -850,5 +841,25 @@ namespace GameBase
         }
 
         #endregion Spawn and Manage Objects
+        
+        
+        public void UpdateState(string newState)
+        {
+            switch (newState)
+            {
+                case "Player Dead":
+                    StartCoroutine(OnPlayerDeath());
+                    break;
+                case "Restarting Game":
+                    m_restartingGame = true;
+                    break;
+                case "Not Restarting Game":
+                    m_restartingGame = false;
+                    break;
+                default:
+                    break;
+            }
+        }
+
     }
 }

@@ -4,8 +4,10 @@ using UnityEngine;
 
 namespace GameBase
 {
-    public class PlayGameUpdater : GameUpdater, IGameStateUpdate
+    public class PlayGameUpdater : GameUpdater, IGameStateUpdate, ISubscriber
     {
+        private bool m_playerAlive = false;
+
         [Header("Game Settings and Flow")]
         [Tooltip("Does the game have a pause menu")]
         [SerializeField] bool m_gameHasPauseMenu = true;
@@ -29,18 +31,21 @@ namespace GameBase
 
 
 
-
+        private void Awake()
+        {
+            ConcretePublisher.Instance.RegisterSubscriber(this);
+        }
 
         public override void ExecuteStateUpdate()
         {
             //Opens or closes pause menu if game is supposed to have a pause menu, the player character is alive, and the player hits the pause key
-            if (m_gameHasPauseMenu && GameInstance.Instance.getPlayerAlive() && Input.GetKeyDown(m_pauseMenuToggleKey))
+            if (m_gameHasPauseMenu && m_playerAlive && Input.GetKeyDown(m_pauseMenuToggleKey))
             {
                 GameInstance.Instance.TogglePauseMenu();
             }
 
             //Opens or closes inventory if the inventory system is being used, the player character is alive, and the player hits the inventory key
-            if (GameInstance.Instance.GetUseInventory() && GameInstance.Instance.getPlayerAlive() && Input.GetKeyDown(m_toggleInventoryKey))
+            if (GameInstance.Instance.GetUseInventory() && m_playerAlive && Input.GetKeyDown(m_toggleInventoryKey))
             {
                 GameInstance.Instance.ToggleInventory();
             }
@@ -92,6 +97,21 @@ namespace GameBase
 
             //Check if prompt is being interacted with, and notify prompter if so
             if (Input.GetKeyDown(highestPriority.GetPromptInteractionKey())) highestPriority.ExecutePrompt();
+        }
+
+        public void UpdateState(string newState)
+        {
+            switch (newState)
+            {
+                case "Player Dead":
+                    m_playerAlive = false;
+                    break;
+                case "Player Alive":
+                    m_playerAlive = true;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

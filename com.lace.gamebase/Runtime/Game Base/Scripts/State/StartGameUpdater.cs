@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace GameBase
 {
-    public class StartGameUpdater : GameUpdater, IGameStateUpdate
+    public class StartGameUpdater : GameUpdater, IGameStateUpdate, ISubscriber
     {
         [SerializeField] bool m_playsMusic = false;
         [Tooltip("Background music to play during gameplay")]
@@ -17,6 +17,13 @@ namespace GameBase
         private bool m_FadeOutCompleted = false;
         private bool m_FadeInCompleted = false;
 
+        private bool m_restartingGame = false;
+
+
+        private void Awake()
+        {
+            ConcretePublisher.Instance.RegisterSubscriber(this);
+        }
 
         public override void ExecuteStateUpdate()
         {
@@ -63,7 +70,7 @@ namespace GameBase
             if (!m_SceneLoaded)
             {
                 //Restarts Game if applicable
-                if (GameInstance.Instance.GetRestartingGame())
+                if (m_restartingGame)
                 {
                     //yield return StartCoroutine(UnloadScene(m_gameSceneName));
                     yield return StartCoroutine(UnloadScene(GameInstance.Instance.GetGameSceneName()));
@@ -152,7 +159,7 @@ namespace GameBase
             }
             else if (!m_FadeInCompleted)    //check for fade in completed so that code does not execute more than once
             {
-                if (GameInstance.Instance.GetRestartingGame())
+                if (m_restartingGame)
                 {
                     yield return new WaitForSeconds(0.5f);  //Wait breifly before fade in to prevent camera glitch
 
@@ -164,7 +171,7 @@ namespace GameBase
                     //transition to "play game" GameState
                     GameInstance.Instance.m_gameState = GameState.PLAYGAME;
 
-                    GameInstance.Instance.SetRestartingGame(false);   //indicate restarting game completed and game is no longer set for a restart
+                    ConcretePublisher.Instance.Publish("Not Restarting Game");
                     m_FadeInCompleted = true;   //indicate fade in completed
                 }
                 else
@@ -179,7 +186,8 @@ namespace GameBase
                     m_FadeInCompleted = true;   //indicate that fade in has completed
                 }
 
-                GameInstance.Instance.SetPlayerAlive(true);
+                //GameInstance.Instance.SetPlayerAlive(true);
+                ConcretePublisher.Instance.Publish("Player Alive");
 
             }
 
@@ -192,6 +200,21 @@ namespace GameBase
             m_UIAdjusted = false;
             m_SceneDefaultsCompleted = false;
             m_FadeInCompleted = false;
+        }
+
+        public void UpdateState(string newState)
+        {
+            switch (newState)
+            {
+                case "Restarting Game":
+                    m_restartingGame = true;
+                    break;
+                case "Not Restarting Game":
+                    m_restartingGame = false;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
