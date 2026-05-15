@@ -786,7 +786,7 @@ AnimatorController:
   - serializedVersion: 5
     m_Name: OneHandedMeleeLayer
     m_StateMachine: {fileID: 6900250842765306119}
-    m_Mask: {fileID: 31900000, guid: 849de33df625a9e48bbc06e45394fd2e, type: 2}
+    m_Mask: {fileID: 31900000, guid: a2a58952bab50ba4eb4967e1958aeb68, type: 2}
     m_Motions: []
     m_Behaviours: []
     m_BlendingMode: 0
@@ -798,7 +798,7 @@ AnimatorController:
   - serializedVersion: 5
     m_Name: DefaultLeftArmLayer
     m_StateMachine: {fileID: -7708745225042996082}
-    m_Mask: {fileID: 31900000, guid: a64edd9fdb2e4c44eacdd0a95809c0a1, type: 2}
+    m_Mask: {fileID: 31900000, guid: 64ed94cb8aa30164a9d6808feb2e7a2f, type: 2}
     m_Motions: []
     m_Behaviours: []
     m_BlendingMode: 0
@@ -810,7 +810,7 @@ AnimatorController:
   - serializedVersion: 5
     m_Name: PistolLayer
     m_StateMachine: {fileID: -1941817641922868106}
-    m_Mask: {fileID: 31900000, guid: 849de33df625a9e48bbc06e45394fd2e, type: 2}
+    m_Mask: {fileID: 31900000, guid: a2a58952bab50ba4eb4967e1958aeb68, type: 2}
     m_Motions: []
     m_Behaviours: []
     m_BlendingMode: 0

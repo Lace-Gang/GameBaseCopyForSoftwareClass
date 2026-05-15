@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace GameBase
 {
-    public class DamageSource : MonoBehaviour
+    public class DamageSource : MonoBehaviour, ISubscriber
     {
         #region Variables
 
@@ -10,6 +10,8 @@ namespace GameBase
         protected float m_incrementTimer;                         //Timer for increment damage
         protected bool m_incrementTimerActive = false;            //Shows if increment damage is active
         protected int m_numObjectsTakingIncrementDamage = 0;      //How many objects are currently taking increment damage from this object
+
+        private bool m_gamePaused = false;
 
         //Exposed Variables
         [Header("Universal Damage Information")]
@@ -33,6 +35,12 @@ namespace GameBase
         [SerializeField] protected bool m_dealDamageOnEnter = true;
 
         #endregion Variables
+
+
+        private void Awake()
+        {
+            ConcretePublisher.Instance.RegisterSubscriber(this);
+        }
 
 
         /// <summary>
@@ -70,7 +78,7 @@ namespace GameBase
         private void OnTriggerEnter(Collider other)
         {
             //Check for paused game
-            if (GameInstance.Instance.getPaused()) return;
+            if (m_gamePaused) return;
 
             //Does nothing if object cannot be damaged by this damage
             if (other.GetComponent<IDamagableInterface>() != null && (other.gameObject != m_damageOwner || m_canDamageOwner))
@@ -82,7 +90,11 @@ namespace GameBase
                         //Deals one instance of damage
                         other.GetComponent<IDamagableInterface>().TakeDamage(m_baseDamage, m_damageOwner);
                         //Destroys self (if applicable)
-                        if (this.m_destroyOnDamageDealt) GameObject.Destroy(this.gameObject);
+                        if (this.m_destroyOnDamageDealt)
+                        {
+                            ConcretePublisher.Instance.UnregisterSubscriber(this);
+                            GameObject.Destroy(this.gameObject);
+                        }
                         break;
                     //For Inrement damage, tracks how many damageable objects are within the hit box, begins timer (if timer is not on), and deals one instance of damage to the 
                     //current object entering the hit box if "deal damage on enter" is set to true
@@ -121,7 +133,7 @@ namespace GameBase
         private void OnTriggerStay(Collider other)
         {
             //Check for paused game
-            if (GameInstance.Instance.getPaused()) return;
+            if (m_gamePaused) return;
 
             //Does nothing if object cannot be damaged by this damage
             if (other.GetComponent<IDamagableInterface>() != null && (other != m_damageOwner || m_canDamageOwner))
@@ -158,7 +170,7 @@ namespace GameBase
         private void OnTriggerExit(Collider other)
         {
             //Check for paused game
-            if (GameInstance.Instance.getPaused()) return;
+            if (m_gamePaused) return;
 
             //Does nothing if object cannot be damaged by this damage
             if (other.GetComponent<IDamagableInterface>() != null && (other != m_damageOwner || m_canDamageOwner))
@@ -184,6 +196,21 @@ namespace GameBase
                     default:
                         break;
                 }
+            }
+        }
+
+        public void UpdateState(string newState)
+        {
+            switch (newState)
+            {
+                case "Game Paused":
+                    m_gamePaused = true;
+                    break;
+                case "Game Unpaused":
+                    m_gamePaused = false;
+                    break;
+                default:
+                    break;
             }
         }
     }

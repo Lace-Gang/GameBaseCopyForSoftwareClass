@@ -11,7 +11,7 @@ namespace GameBase
 
     [RequireComponent(typeof(CharacterController))] //A CharacterController is required
     [RequireComponent(typeof(PlayerCharacter))]
-    public class PlayerController : MonoBehaviour
+    public class PlayerController : MonoBehaviour, ISubscriber
     {
         #region Hidden Variables
 
@@ -39,6 +39,8 @@ namespace GameBase
         Vector2 m_movementInput = Vector2.zero;         //Current movement input vector (which direction is the player supposed to move)
         Vector3 m_velocity = Vector3.zero;              //Current player velocity
 
+
+        private bool m_gamePaused = false;
         #endregion Hidden Variables
 
 
@@ -51,14 +53,14 @@ namespace GameBase
 
         //InputActions
         [Header("Move Action")]
-        [Tooltip("Player Input for moving the character. " + 
+        [Tooltip("Player Input for moving the character. " +
             "This input MUST be an Up/Down/Left/Right Composit that evaluates to a Vector2!")]
         [SerializeField] InputAction moveAction;
         [Tooltip("Max character movement speed under normal circumstances (not running, no power-ups etc)")]
         [SerializeField] float m_baseSpeed = 2.5f;
         [Tooltip("Used to calculate movement")]
         [SerializeField] float m_acceleration = 20.0f;
-        [Tooltip ("How quickly the player can turn")]
+        [Tooltip("How quickly the player can turn")]
         [SerializeField] float m_turnRate = 5f;
 
         [Header("Jump Action")]
@@ -102,13 +104,13 @@ namespace GameBase
         /// Sets the weapon held by the player
         /// </summary>
         /// <param name="weapon">The weapon that the player is to be holding</param>
-        public void SetWeapon(WeaponBase weapon) 
-        {   
+        public void SetWeapon(WeaponBase weapon)
+        {
             //Sets current weapon
             m_weapon = weapon;
-            
+
             //Adjusts weights of animator blend layers depending on what weapon type (or lack thereof) is being held at this time
-            if(m_weapon == null)
+            if (m_weapon == null)
             {
                 m_animator.SetLayerWeight(1, 0);
                 m_animator.SetLayerWeight(3, 0);
@@ -130,8 +132,8 @@ namespace GameBase
             }
 
 
-        }    
-  
+        }
+
         /// <summary>
         /// Enables the AudioListener attached to the camera
         /// </summary>
@@ -169,6 +171,8 @@ namespace GameBase
             sprintAction.started += OnSprint;
             sprintAction.canceled += OnSprint;
             attackAction.performed += OnAttack;
+
+            ConcretePublisher.Instance.RegisterSubscriber(this);
         }
 
         /// <summary>
@@ -201,7 +205,7 @@ namespace GameBase
         void Update()
         {
             //Check for paused game
-            if (GameInstance.Instance.getPaused()) return;
+            if (m_gamePaused) return;
 
             EvaluateFallDamage(); //MUST happen before updating m_onGround
 
@@ -225,17 +229,17 @@ namespace GameBase
 
             ////Player movement
             ExecuteMovement();
-                      
+
 
             ////Update timers
             //Timer for Double Jump
-            if(m_hasJumped)
+            if (m_hasJumped)
             {
                 m_timeSinceLastJump += Time.deltaTime;
             }
 
             //Timer for falling
-            if(!m_onGround && m_controller.velocity.y < 0)
+            if (!m_onGround && m_controller.velocity.y < 0)
             {
                 m_timeFalling += Time.deltaTime;
             }
@@ -322,13 +326,13 @@ namespace GameBase
         public void EvaluateFallDamage()
         {
             ////Check for and apply fall damage
-            
+
             //Only evaluate if the player has landed since the last update cycle
             if (!m_onGround && m_controller.isGrounded)
-            {            
+            {
                 //if greater than min fall time and fall damage enabled
                 if (m_fallDamageEnabled && m_timeFalling > m_minFallTime)
-                {            
+                {
                     if (!m_scaleFallDamage) m_playerCharacter.TakeDamage(m_baseFallDamage, GetComponent<GameObject>());  //applies only base damage if damage should NOT scale with time
                     else
                     {
@@ -337,7 +341,7 @@ namespace GameBase
                         m_playerCharacter.TakeDamage(fallDamage, GetComponent<GameObject>());
                     }
                 }
-            
+
                 //reset timer
                 m_timeFalling = 0;
             }
@@ -369,7 +373,7 @@ namespace GameBase
         private void OnJump(InputAction.CallbackContext ctx)
         {
             //Only jumps if the character is already on the ground or if double jump is enabled and player is within the correct timeframe
-            if (ctx.phase == InputActionPhase.Performed && m_onGround) 
+            if (ctx.phase == InputActionPhase.Performed && m_onGround)
             {
                 //Add jump velocity to player to be applied as movement in next update
                 m_velocity.y = Mathf.Sqrt(-2 * m_gravity * m_jumpHeight);
@@ -378,12 +382,13 @@ namespace GameBase
                 m_animator.SetTrigger("Jump");
 
                 //Set up variables to track double jump if applicable
-                if(m_enableDoubleJump)                                      
-                {                                                           
-                    m_hasJumped = true;                                     
+                if (m_enableDoubleJump)
+                {
+                    m_hasJumped = true;
                     m_timeSinceLastJump = 0;
                 }
-            } else if (m_hasJumped && (m_timeSinceLastJump <= m_doubleJumpTimer))
+            }
+            else if (m_hasJumped && (m_timeSinceLastJump <= m_doubleJumpTimer))
             {
                 //Add jump velocity to player to be applied as movement in next update
                 m_velocity.y = Mathf.Sqrt(-2 * m_gravity * m_jumpHeight);
@@ -412,17 +417,17 @@ namespace GameBase
         private void OnAttack(InputAction.CallbackContext ctx)
         {
             //player cannot attack when dead or if there is no weapon or player is already attacking
-            if(m_isDead || m_weapon == null || m_isAttacking || GameInstance.Instance.getPaused()) return;
+            if (m_isDead || m_weapon == null || m_isAttacking || m_gamePaused) return;
 
             m_weapon.Attack();  //tells weapon to attack
 
             //updates that player is attacking
-            m_isAttacking = true;   
+            m_isAttacking = true;
             StartCoroutine(AttackTimer(m_weapon.GetAttackDuration()));
 
             //Update animator to attack
-            if(m_weapon.GetComponent<MeleeWeapon>() != null) m_animator.SetTrigger("OneHandedMeleeAttack");
-            if(m_weapon.GetComponent<ProjectileWeapon>() != null) m_animator.SetTrigger("PistolAttack");
+            if (m_weapon.GetComponent<MeleeWeapon>() != null) m_animator.SetTrigger("OneHandedMeleeAttack");
+            if (m_weapon.GetComponent<ProjectileWeapon>() != null) m_animator.SetTrigger("PistolAttack");
         }
 
         /// <summary>
@@ -488,7 +493,22 @@ namespace GameBase
                 SetWeapon(m_weapon);
             }
         }
-
         #endregion Player States
+
+        public void UpdateState(string newState)
+        {
+            switch (newState)
+            {
+                case "Game Paused":
+                    m_gamePaused = true;
+                    break;
+                case "Game Unpaused":
+                    m_gamePaused = false;
+                    break;
+                default:
+                    break;
+            }
+
+        }
     }
 }

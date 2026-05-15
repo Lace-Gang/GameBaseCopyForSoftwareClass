@@ -11,7 +11,7 @@ namespace GameBase{
     [RequireComponent (typeof(Animator))]
     [RequireComponent (typeof(Health))]
     [RequireComponent (typeof(AudioSource))]
-    public class PlayerCharacter : MonoBehaviour, IDataPersistence, IDamagableInterface
+    public class PlayerCharacter : MonoBehaviour, IDataPersistence, IDamagableInterface, ISubscriber
     {
         #region Hidden Variables
 
@@ -413,7 +413,7 @@ namespace GameBase{
                 StartCoroutine(AudioTimer(m_deathSound.length));
             }
 
-            StartCoroutine(GameInstance.Instance.OnPLayerDeath());  //Notify Game Instance of Player Death
+            ConcretePublisher.Instance.Publish("Player Dead");
         }
 
         /// <summary>
@@ -501,6 +501,11 @@ namespace GameBase{
 
 
             return false;   //returns false if the weapon was not successfully equipped (liktely means there is no socket with an ID matching the specified name
+        }
+
+        public void UpdateState(string newState)
+        {
+            //
         }
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace GameBase
 {
-    public class EquippedItemBox : MonoBehaviour, IDataPersistence
+    public class EquippedItemBox : MonoBehaviour, IDataPersistence, ISubscriber
     {
         #region Variables
 
@@ -13,6 +13,7 @@ namespace GameBase
         private int m_numItems = 0;             //Name of the item currently being stored in this Equipped Item Box
         private InventoryItem m_item = null;    //Number of items currently being stored in this Equipped Item Box
         private Sprite m_itemSprite;            //The sprite of the item burrently being stored in this Equipped Item Box
+        private bool m_playerAlive = false;
 
         //Exposed Variables
         [Header("EquippedItemBox Components")]
@@ -40,6 +41,7 @@ namespace GameBase
         private void Awake()
         {
             m_image.enabled = false;
+            ConcretePublisher.Instance.RegisterSubscriber(this);
         }
 
         /// <summary>
@@ -56,7 +58,7 @@ namespace GameBase
         private void Update()
         {
             //only uses item if correct key is down, there is an equipped item, and the player is alive
-            if (Input.GetKeyDown(m_useKey) && m_item != null && GameInstance.Instance.getPlayerAlive())
+            if (Input.GetKeyDown(m_useKey) && m_item != null && m_playerAlive)
             {
                 m_item.Use();
 
@@ -270,7 +272,22 @@ namespace GameBase
                 }                     
             }
         }
-
         #endregion Save and Load
+
+        public void UpdateState(string newState)
+        {
+            switch (newState)
+            {
+                case "Player Dead":
+                    m_playerAlive = false;
+                    break;
+                case "Player Alive":
+                    m_playerAlive = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+
     }
 }
