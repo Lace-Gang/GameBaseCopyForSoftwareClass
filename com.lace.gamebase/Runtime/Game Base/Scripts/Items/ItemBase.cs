@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GameBase
@@ -26,6 +27,8 @@ namespace GameBase
         [SerializeField] protected bool m_playAudioOnAutoPickup = false;
         [Tooltip("AudioClip that should be played when this item is picked up")]
         [SerializeField] protected AudioSource m_pickupAudio = null;
+
+        protected List<IItemDecorator> m_decorators = new List<IItemDecorator>();
 
         #endregion Variables
 
@@ -72,6 +75,17 @@ namespace GameBase
         public void PlayPickupAudio()
         {            
             m_pickupAudio?.Play();    //plays audio for item picked up if such an audio exists        
+        }
+
+        public void UseDecorators()
+        {
+            if(m_decorators.Count > 0)
+            {
+                foreach(IItemDecorator decorator in m_decorators)
+                {
+                    decorator.Use();
+                }
+            }
         }
 
         /// <summary>
